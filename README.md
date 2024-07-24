@@ -1,104 +1,112 @@
-# Swisstronik Tesnet Techinal Task 3 (Mint a ERC-721 Token)
 
-link : [Click!](https://www.swisstronik.com/testnet2/dashboard)
+# Swisstronik ERC721 Mint Token
 
-Feel free donate to my EVM address
+## Overview
 
-EVM :
+This repository contains a Hardhat project for deploying and managing an ERC721 Mintable Token on the Ethereum network. Below is an explanation of the key components and how to deploy the contract.
 
-```bash
-0x9902C3A98Df4b240ad5496cC26F89bAb8058f4aE
-```
+## Explanation of Code
 
-## Steps
+### Solidity Contract
 
-### 1. Clone Repository
+#### `contracts/SwisstronikERC721.sol`
 
-```bash
-git clone https://github.com/Mnuralim/swisstronik-erc721-mint-token.git
-```
-
-```
-cd swisstronik-erc721-mint-token
-```
-
-### 2. Install Dependency
-
-```bash
-npm install
-```
-
-### 3. Set .env File
-
-create .env file in root project
-
-```bash
-PRIVATE_KEY="your private key"
-```
-
-### 4. Update Smart Contract (Skipp if you won't modify NFT name)
-
-- Open contracts folder
-- Open Nft.sol file
-- Feel free to modify token name and token symbol
-
-```
+```solidity
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract TestNFT is ERC721 {
-    uint256 private _currentTokenId = 0;
+contract SwisstronikERC721 is ERC721, Ownable {
+    uint256 private _tokenIdCounter;
 
-    event NFTMinted(address recipient, uint256 tokenId);
+    constructor() ERC721("Swisstronik Token", "SWT") {}
 
-    constructor() ERC721("IzzyNFT", "IZZNFT") {}
-
-    function mintNFT(address recipient) public returns (uint256) {
-        _currentTokenId += 1;
-        uint256 newItemId = _currentTokenId;
-        _mint(recipient, newItemId);
-
-        emit NFTMinted(recipient, newItemId);
-
-        return newItemId;
-    }
-
-    function burnNFT(uint256 tokenId) public {
-        _burn(tokenId);
+    function mint(address to) public onlyOwner {
+        _tokenIdCounter++;
+        _mint(to, _tokenIdCounter);
     }
 }
-
 ```
 
-### 5. Compile Smart Contract
+- **ERC721 Token**: The contract inherits from OpenZeppelin's ERC721 contract.
+- **Ownable**: The contract inherits from OpenZeppelin's Ownable contract, which restricts the `mint` function to the contract owner.
+- **`mint` function**: Allows the owner to mint new tokens to a specified address. Each token gets a unique ID incremented by `_tokenIdCounter`.
 
-```bash
-npm run compile
+### Deployment Script
+
+#### `scripts/deploy.js`
+
+```javascript
+async function main() {
+    const [deployer] = await ethers.getSigners();
+    console.log("Deploying contracts with the account:", deployer.address);
+
+    const SwisstronikERC721 = await ethers.getContractFactory("SwisstronikERC721");
+    const token = await SwisstronikERC721.deploy();
+    console.log("SwisstronikERC721 deployed to:", token.address);
+}
+
+main()
+    .then(() => process.exit(0))
+    .catch((error) => {
+        console.error(error);
+        process.exit(1);
+    });
 ```
 
-### 6. Deploy Smart Contract
+- **`main` function**: Deploys the `SwisstronikERC721` contract.
+- **`ethers.getSigners`**: Retrieves the deployer's account.
+- **`ethers.getContractFactory`**: Prepares the contract for deployment.
+- **`SwisstronikERC721.deploy`**: Deploys the contract to the specified network.
 
-```bash
-npm run deploy
+## Deploying the Contract
+
+### Prerequisites
+
+Ensure you have the following installed:
+
+- [Node.js](https://nodejs.org/)
+- [npm](https://www.npmjs.com/) or [yarn](https://yarnpkg.com/)
+
+### Steps
+
+1. **Install dependencies**:
+    ```bash
+    npm install
+    # or
+    yarn install
+    ```
+
+2. **Compile the contract**:
+    ```bash
+    npx hardhat compile
+    ```
+
+3. **Deploy the contract**:
+    ```bash
+    npx hardhat run scripts/deploy.js --network <network-name>
+    ```
+    Replace `<network-name>` with the desired network, such as `localhost`, `ropsten`, or `mainnet`.
+
+### Example Configuration in `hardhat.config.js`
+
+```javascript
+require("@nomiclabs/hardhat-waffle");
+
+module.exports = {
+    solidity: "0.8.4",
+    networks: {
+        localhost: {
+            url: "http://127.0.0.1:8545"
+        },
+        ropsten: {
+            url: `https://ropsten.infura.io/v3/YOUR_INFURA_PROJECT_ID`,
+            accounts: [`0x${YOUR_PRIVATE_KEY}`]
+        }
+    }
+};
 ```
 
-### 7. Mint Token
-
-```bash
-npm run mint
-```
-
-### 8. Finsihed
-
-- Open the deployed-adddress.ts (location in utils folder)
-- Copy the address and paste the address into testnet dashboard
-- Open the tx-hash.txt (location in utils folder)
-- Copy the address and paste the tx hash link into testnet dashboard
-- push this project to your github and paste your repository link in testnet dashboard
-
-by :
-github : [Mnuralim](https://github.com/Mnuralim)
-twitter : @Izzycracker04
-telegram : @fitriay19
+Replace `YOUR_INFURA_PROJECT_ID` with your Infura project ID and `YOUR_PRIVATE_KEY` with your Ethereum account private key.
